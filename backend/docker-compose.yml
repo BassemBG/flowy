@@ -1,38 +1,49 @@
-version: '3.8'
-
+version: "3.8"
 services:
+  gateway:
+    build: ./gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - whatsapp_agent
+      - ai_glossary
+      - ai_notekeeper
+      - automatic_translation
+      - skills_development
+      - shadowing
   whatsapp_agent:
-    build: ./whatsapp_agent
-    container_name: whatsapp_agent
-    ports:
-      - "8001:8001"
-
+    build: ./microservices/whatsapp_agent
+    env_file:
+      - ./microservices/whatsapp_agent/.env
+    expose:
+      - "8000"
   ai_glossary:
-    build: ./ai_glossary
-    container_name: ai_glossary
-    ports:
-      - "8002:8002"
-
-  automatic_translation:
-    build: ./automatic_translation
-    container_name: automatic_translation
-    ports:
-      - "8003:8003"
-
-  skills_development:
-    build: ./skills_development
-    container_name: skills_development
-    ports:
-      - "8004:8004"
-
+    build: ./microservices/ai_glossary
+    env_file:
+      - ./microservices/ai_glossary/.env
+    expose:
+      - "8000"
   ai_notekeeper:
-    build: ./ai_notekeeper
-    container_name: ai_notekeeper
-    ports:
-      - "8005:8005"
-
+    build: ./microservices/ai_notekeeper
+    env_file:
+      - ./microservices/ai_notekeeper/.env
+    expose:
+      - "8000"
+  automatic_translation:
+    build: ./microservices/automatic_translation
+    env_file:
+      - ./microservices/automatic_translation/.env
+    expose:
+      - "8000"
+  skills_development:
+    build: ./microservices/skills_development
+    env_file:
+      - ./microservices/skills_development/.env
+    expose:
+      - "8000"
   shadowing:
-    build: ./shadowing
-    container_name: shadowing
-    ports:
-      - "8006:8006"
+    build: ./microservices/shadowing
+    env_file:
+      - ./microservices/shadowing/.env
+    expose:
+      - "8000"
