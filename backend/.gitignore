@@ -145,6 +145,8 @@ venv12
 ENV/
 env.bak/
 venv.bak/
+microservices/*/.env
+
 
 # Spyder project settings
 .spyderproject
