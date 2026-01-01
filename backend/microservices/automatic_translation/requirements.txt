@@ -1,2 +1,5 @@
 fastapi
 uvicorn
+openai
+pillow
+python-dotenv
