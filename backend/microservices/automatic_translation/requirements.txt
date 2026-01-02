@@ -4,3 +4,9 @@ openai
 pillow
 python-dotenv
 python-multipart
+qdrant_client
+httpx
+pydantic
+sentence_transformers
+
+
