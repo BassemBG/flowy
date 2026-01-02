@@ -1,9 +1,9 @@
-
 # Example Gateway FastAPI App
 # This service proxies requests to backend microservices.
 # To add a new microservice, add its name and URL to MICROSERVICE_URLS.
 
 from fastapi import FastAPI, Request
+from fastapi.responses import Response
 import httpx
 
 app = FastAPI()
@@ -17,23 +17,39 @@ MICROSERVICE_URLS = {
     "shadowing": "http://shadowing:8000",
 }
 
+
 @app.api_route("/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def proxy(service: str, path: str, request: Request):
     """
     Proxies requests to the appropriate microservice.
     Example: /ai_glossary/some-endpoint -> http://ai_glossary:8000/some-endpoint
+    Handles form data and file uploads correctly.
     """
     if service not in MICROSERVICE_URLS:
         return {"error": "Unknown service"}
+    
     url = f"{MICROSERVICE_URLS[service]}/{path}"
-    async with httpx.AsyncClient() as client:
+    
+    # Preserve query params
+    if request.url.query:
+        url += f"?{request.url.query}"
+    
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        # Forward request to microservice
         response = await client.request(
-            request.method, url,
-            headers=request.headers.raw,
-            content=await request.body()
+            request.method,
+            url,
+            headers=dict(request.headers),
+            content=await request.body() if request.method != "GET" else None,
         )
-    # Forward the response from the microservice
-    return response.json()
+    
+    # Return response as-is to preserve content-type and structure
+    return Response(
+        content=response.content,
+        status_code=response.status_code,
+        headers=dict(response.headers),
+    )
+
 
 # To add a new microservice:
 # 1. Add its name and URL to MICROSERVICE_URLS above.
