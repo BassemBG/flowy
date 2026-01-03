@@ -15,6 +15,7 @@ from services.transcription_service import download_whatsapp_media, transcribe_a
 from services.conversation_service import add_to_history
 from services.tool_service import detect_language, extract_verification_data, detect_tool_needed, execute_local_tool
 from services.ai_service import query_model
+from services.analytics_service import track_message_received, track_message_sent, track_tool_usage, get_analytics
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,12 @@ def cleanup_processed_messages():
 def get_whatsapp_agent():
     """Root endpoint for WhatsApp Agent microservice."""
     return {"message": "WhatsApp Agent Module"}
+
+
+@router.get("/analytics")
+def get_whatsapp_analytics():
+    """Get analytics data for the dashboard."""
+    return get_analytics()
 
 
 @router.get("/webhook")
@@ -140,12 +147,15 @@ async def handle_webhook(request: Request):
         if message_text:
             logger.info(f"\n📝 Received message from {from_number}: {message_text}")
             
-            # Add user message to history
-            add_to_history(from_number, "user", message_text)
-            
             # Detect language
             language = detect_language(message_text)
             logger.info(f"Detected language: {language}")
+            
+            # Track analytics
+            track_message_received(from_number, language)
+            
+            # Add user message to history
+            add_to_history(from_number, "user", message_text)
             
             # Check if user has pending verification
             has_pending_verification = from_number in pending_verifications
@@ -161,6 +171,7 @@ async def handle_webhook(request: Request):
             if tool_info:
                 # Execute local tool with verification
                 logger.info(f"Executing local tool: {tool_info['tool']}")
+                track_tool_usage(tool_info['tool'])
                 tool_result = execute_local_tool(
                     tool_info,
                     language,
@@ -222,6 +233,7 @@ async def handle_webhook(request: Request):
             # Send the response back to WhatsApp
             logger.info("Sending response to WhatsApp...")
             await send_whatsapp_message(from_number, final_response)
+            track_message_sent(from_number)
             logger.info("Response sent successfully!")
         
         return {"status": "ok"}
