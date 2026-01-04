@@ -11,6 +11,8 @@ from schemas import (
     GlossarySearchResponse,
     GlossaryResult,
     ManagedFile,
+    WebSearchResponse,
+    WebResult,
 )
 from services.file_service import parse_file
 from services.chroma_service import (
@@ -20,6 +22,7 @@ from services.chroma_service import (
     get_all_files,
     get_file_by_id,
 )
+from services.web_search_service import search_web
 
 router = APIRouter()
 
@@ -170,4 +173,39 @@ async def search_glossary_endpoint(request: SearchRequest):
         results=glossary_results,
         answer=answer,
         mode="glossary"
+    )
+
+
+@router.post("/search/web", response_model=WebSearchResponse)
+async def search_web_endpoint(request: SearchRequest):
+    """
+    Search the internet for a term definition using DuckDuckGo + Groq LLM.
+    
+    Returns web results with an AI-generated answer synthesized from the results.
+    """
+    if not request.query.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+    
+    try:
+        result = search_web(request.query, request.top_k)
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Web search error: {str(e)}")
+    
+    # Format results
+    web_results = [
+        WebResult(
+            title=r["title"],
+            snippet=r["snippet"],
+            url=r["url"]
+        )
+        for r in result["results"]
+    ]
+    
+    return WebSearchResponse(
+        query=result["query"],
+        results=web_results,
+        answer=result["answer"],
+        mode="web"
     )

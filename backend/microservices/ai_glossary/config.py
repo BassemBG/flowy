@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     # Hugging Face API Token
     HF_TOKEN: str = ""
     
+    # Groq Cloud API Key (for web search LLM)
+    GROQ_API_KEY: str = ""
+    
     # ChromaDB Configuration
     CHROMA_PERSIST_DIRECTORY: str = "./chroma_data"
     CHROMA_COLLECTION: str = "glossary_terms"

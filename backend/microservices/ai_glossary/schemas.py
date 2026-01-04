@@ -66,6 +66,21 @@ class GlossarySearchResponse(BaseModel):
     mode: Literal["glossary"] = "glossary"
 
 
+class WebResult(BaseModel):
+    """Single result from web search."""
+    title: str
+    snippet: str
+    url: str
+
+
+class WebSearchResponse(BaseModel):
+    """Response from web search."""
+    query: str
+    results: List[WebResult]
+    answer: str
+    mode: Literal["web"] = "web"
+
+
 # ============================================================================
 # Chat (Optional Unified Interface)
 # ============================================================================
