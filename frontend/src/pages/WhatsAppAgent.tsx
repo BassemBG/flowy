@@ -52,12 +52,28 @@ export default function WhatsAppAgent() {
       const data = await response.json();
       setAnalytics(data);
       setIsConnected(true);
+      setIsAgentActive(data.is_agent_active ?? true);
       setError(null);
     } catch (err) {
       setError("Unable to connect to analytics");
       setIsConnected(false);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleAgentStatus = async (active: boolean) => {
+    try {
+      const response = await fetch(`${API_BASE}/whatsapp_agent/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: active }),
+      });
+      if (response.ok) {
+        setIsAgentActive(active);
+      }
+    } catch (err) {
+      console.error("Failed to toggle agent status:", err);
     }
   };
 
@@ -132,20 +148,24 @@ export default function WhatsAppAgent() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`h-12 w-12 rounded-full flex items-center justify-center ${isAgentActive ? "bg-green-500/10" : "bg-muted"}`}>
-                    <Power className={`h-6 w-6 ${isAgentActive ? "text-green-500" : "text-muted-foreground"}`} />
+                  <div className={`h-12 w-12 rounded-full flex items-center justify-center ${isAgentActive ? "bg-green-500/10" : "bg-red-500/10"}`}>
+                    <Power className={`h-6 w-6 ${isAgentActive ? "text-green-500" : "text-red-500"}`} />
                   </div>
                   <div>
                     <p className="font-medium">{isAgentActive ? "Agent Active" : "Agent Inactive"}</p>
                     <p className="text-sm text-muted-foreground">
-                      {isAgentActive ? "Responding to messages" : "Not responding"}
+                      {isAgentActive ? "Responding to messages" : "Sending offline message"}
                     </p>
                   </div>
                 </div>
-                <Switch
-                  checked={isAgentActive}
-                  onCheckedChange={setIsAgentActive}
-                />
+                <Button
+                  variant={isAgentActive ? "destructive" : "default"}
+                  onClick={() => toggleAgentStatus(!isAgentActive)}
+                  className={isAgentActive ? "" : "bg-green-600 hover:bg-green-700"}
+                >
+                  <Power className="h-4 w-4 mr-2" />
+                  {isAgentActive ? "Disable Agent" : "Enable Agent"}
+                </Button>
               </div>
 
               <div className="grid grid-cols-2 gap-4 pt-2">
