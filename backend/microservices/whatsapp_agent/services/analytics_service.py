@@ -11,6 +11,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Agent status (can be toggled from frontend)
+_agent_status = {
+    "is_active": True,
+    "offline_message_ar": "مرحباً! المكتب مغلق حالياً. يرجى التواصل معنا خلال ساعات العمل من الاثنين إلى الجمعة، 8:00 - 17:00. شكراً لتفهمكم. 🙏",
+    "offline_message_fr": "Bonjour! Le bureau est actuellement fermé. Veuillez nous contacter pendant les heures d'ouverture du lundi au vendredi, 8h00 - 17h00. Merci de votre compréhension. 🙏"
+}
+
 # In-memory storage
 _stats = {
     "start_time": datetime.now(),
@@ -125,3 +132,34 @@ def reset_analytics():
         "conversations": defaultdict(list),
     }
     logger.info("📊 Analytics reset")
+
+
+# ======== Agent Status Functions ========
+
+def is_agent_active() -> bool:
+    """Check if agent is active."""
+    return _agent_status["is_active"]
+
+
+def set_agent_active(active: bool) -> Dict[str, Any]:
+    """Set agent active status."""
+    _agent_status["is_active"] = active
+    logger.info(f"🔄 Agent status changed to: {'active' if active else 'inactive'}")
+    return {"is_active": active}
+
+
+def get_agent_status() -> Dict[str, Any]:
+    """Get agent status."""
+    return {
+        "is_active": _agent_status["is_active"],
+        "offline_message_ar": _agent_status["offline_message_ar"],
+        "offline_message_fr": _agent_status["offline_message_fr"]
+    }
+
+
+def get_offline_message(language: str = "arabic") -> str:
+    """Get offline message for given language."""
+    if language == "french":
+        return _agent_status["offline_message_fr"]
+    return _agent_status["offline_message_ar"]
+

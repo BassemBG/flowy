@@ -15,7 +15,10 @@ from services.transcription_service import download_whatsapp_media, transcribe_a
 from services.conversation_service import add_to_history
 from services.tool_service import detect_language, extract_verification_data, detect_tool_needed, execute_local_tool
 from services.ai_service import query_model
-from services.analytics_service import track_message_received, track_message_sent, track_tool_usage, get_analytics
+from services.analytics_service import (
+    track_message_received, track_message_sent, track_tool_usage, get_analytics,
+    is_agent_active, set_agent_active, get_agent_status, get_offline_message
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +49,23 @@ def get_whatsapp_agent():
 @router.get("/analytics")
 def get_whatsapp_analytics():
     """Get analytics data for the dashboard."""
-    return get_analytics()
+    analytics = get_analytics()
+    analytics["is_agent_active"] = is_agent_active()
+    return analytics
+
+
+@router.get("/status")
+def get_status():
+    """Get agent active status."""
+    return get_agent_status()
+
+
+@router.post("/status")
+async def update_status(request: Request):
+    """Update agent active status."""
+    body = await request.json()
+    active = body.get("is_active", True)
+    return set_agent_active(active)
 
 
 @router.get("/webhook")
@@ -153,6 +172,14 @@ async def handle_webhook(request: Request):
             
             # Track analytics
             track_message_received(from_number, language)
+            
+            # Check if agent is active
+            if not is_agent_active():
+                logger.info("🔴 Agent is inactive, sending offline message")
+                offline_msg = get_offline_message(language)
+                await send_whatsapp_message(from_number, offline_msg)
+                track_message_sent(from_number)
+                return {"status": "ok"}
             
             # Add user message to history
             add_to_history(from_number, "user", message_text)
